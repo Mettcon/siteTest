@@ -1,0 +1,101 @@
+{
+  "roots": [
+    {
+      "key": "tq7cpiygakdaic3isakk3ol",
+      "title": "Learning",
+      "icon": null,
+      "hasTitleNumberOutlined": false,
+      "vaultName": "page",
+      "children": [
+        {
+          "key": "7gb7enanqf5f8wfehkyfepd",
+          "title": "Assembly",
+          "icon": null,
+          "hasTitleNumberOutlined": false,
+          "vaultName": "page",
+          "children": [
+            {
+              "key": "kevzvdlb6a80mr0lq2rki5c",
+              "title": "Registers",
+              "icon": null,
+              "hasTitleNumberOutlined": false,
+              "vaultName": "page",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "tr0o4qmvrombhaqcn8qprix",
+      "title": "Notes",
+      "icon": null,
+      "hasTitleNumberOutlined": false,
+      "vaultName": "page",
+      "children": [
+        {
+          "key": "5bf46f8xwbcv2oz7jj4ld89",
+          "title": "Csharp",
+          "icon": null,
+          "hasTitleNumberOutlined": false,
+          "vaultName": "page",
+          "children": []
+        },
+        {
+          "key": "xeal97sg2qaioc5y0588wsb",
+          "title": "openBSD",
+          "icon": null,
+          "hasTitleNumberOutlined": false,
+          "vaultName": "page",
+          "children": []
+        },
+        {
+          "key": "hrenlshxhrv1nf3d4sj6rrx",
+          "title": "Powershell",
+          "icon": null,
+          "hasTitleNumberOutlined": false,
+          "vaultName": "page",
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "rnpadf0109injt42uciidqj",
+      "title": "Recommendations",
+      "icon": null,
+      "hasTitleNumberOutlined": false,
+      "vaultName": "page",
+      "children": []
+    },
+    {
+      "key": "uw7ede5yjm5tbc4jb3750ym",
+      "title": "Resume",
+      "icon": null,
+      "hasTitleNumberOutlined": false,
+      "vaultName": "page",
+      "children": []
+    }
+  ],
+  "child2parent": {
+    "tq7cpiygakdaic3isakk3ol": null,
+    "7gb7enanqf5f8wfehkyfepd": "tq7cpiygakdaic3isakk3ol",
+    "kevzvdlb6a80mr0lq2rki5c": "7gb7enanqf5f8wfehkyfepd",
+    "tr0o4qmvrombhaqcn8qprix": null,
+    "5bf46f8xwbcv2oz7jj4ld89": "tr0o4qmvrombhaqcn8qprix",
+    "xeal97sg2qaioc5y0588wsb": "tr0o4qmvrombhaqcn8qprix",
+    "hrenlshxhrv1nf3d4sj6rrx": "tr0o4qmvrombhaqcn8qprix",
+    "rnpadf0109injt42uciidqj": null,
+    "uw7ede5yjm5tbc4jb3750ym": null
+  },
+  "notesLabelById": {
+    "tq7cpiygakdaic3isakk3ol": "Learning",
+    "7gb7enanqf5f8wfehkyfepd": "Assembly",
+    "kevzvdlb6a80mr0lq2rki5c": "Registers",
+    "tr0o4qmvrombhaqcn8qprix": "Notes",
+    "5bf46f8xwbcv2oz7jj4ld89": "Csharp",
+    "xeal97sg2qaioc5y0588wsb": "openBSD",
+    "hrenlshxhrv1nf3d4sj6rrx": "Powershell",
+    "rnpadf0109injt42uciidqj": "Recommendations",
+    "uw7ede5yjm5tbc4jb3750ym": "Resume"
+  }
+}
