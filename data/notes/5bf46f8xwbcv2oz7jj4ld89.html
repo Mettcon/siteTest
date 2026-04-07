@@ -1,0 +1,141 @@
+<h1 id="csharp">Csharp<a aria-hidden="true" class="anchor-heading icon-link" href="#csharp"></a></h1>
+<p><a title="Private" href="https://wiki.dendron.so/notes/hfyvYGJZQiUwQaaxQO27q.html" target="_blank" class="private">#TODO (Private)</a>: Add memory profiler screenshots  </p>
+<h2 id="using-statement">using statement<a aria-hidden="true" class="anchor-heading icon-link" href="#using-statement"></a></h2>
+<p>recently I stumbled upon a code snippet like this</p>
+<pre class="language-csharp"><code class="language-csharp">SPWeb rollbackProcess
+<span class="token keyword">try</span> <span class="token punctuation">{</span>
+    <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">SPWeb</span> process <span class="token operator">=</span> someSite<span class="token punctuation">.</span><span class="token function">Openweb</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// prepare Rollback</span>
+        rollbackProcess <span class="token operator">=</span> process
+        
+        <span class="token comment">//... some code here</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">{</span>
+    <span class="token comment">// rollback</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>SPWebs are some pretty heavy Sharepoint Objects and have to be manually disposed. This is mentioned in the <a href="https://learn.microsoft.com/en-us/previous-versions/office/developer/sharepoint-2010/ms473942(v=office.14)#examples">Class Doc examples</a> and explained in the <a href="https://learn.microsoft.com/en-us/previous-versions/office/developer/sharepoint-2010/ee557362(v=office.14)#why-dispose">Best Practices</a>.<br>
+That's what the <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/using">using statement</a> is for. At it's end it calls <code>dispose()</code> for you.  </p>
+<p>I assume, initially the developer wrote something like this</p>
+<pre class="language-csharp"><code class="language-csharp">    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">try</span>
+        <span class="token punctuation">{</span>
+            <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">TrackedResource</span> process <span class="token operator">=</span> <span class="token keyword">new</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                process<span class="token punctuation">.</span><span class="token function">Use</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">catch</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">//rollback here</span>
+            process<span class="token punctuation">.</span><span class="token function">Use</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// IDE error here</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<p>and his IDE told him <code>CS0103  The name 'process' does not exist in the current context</code>
+So he prepared a variable in another context for the rollback and ended up with the code from the beginning.</p>
+<p>3 things are important to understand here.</p>
+<ol>
+<li>To understand here what the using statement exactly does.<br>
+We can see this in <a href="https://sharplab.io/#v2:D4AQTAjAsAULIGYAE4kBECmBbA9gYQBsBDAZxKQC4BJNASxIAccSiAjAjJWAb1iX8QoALOnpMSGABQBKJNwC+sRTEGo8cvvxTIQIgLIyNMLSZQAGJJPTZ8xMkgBCRAHYuiSALxJnGAO4zZBU1+ZXkgA=">Sharplab</a>, the <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/using">docs</a> and the <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/statements#1314-the-using-statement">language specification</a>.<br>
+It is nothing more than a try finally which calls the <code>Dispose()</code> function from finally.</li>
+<li>To know that <code>Dispose()</code> is just a convention, an agreed upon name for a function which cleans up it's unmanaged ressources. Ressources the GC does not know about. It does not remove the object itself, or trigger the GC to collect it.</li>
+<li>Notice how the message says <code>The name 'process' does not exist</code>. This means exactly what it says. The name pointing to that heap object is gone. The object itself is still alive. And it is still alive. Including an</li>
+</ol>
+<p>We know now that <code>process</code> doesn't exist in the catch block or rollback.
+But <code>rollbackProcess</code> holds a reference to that not existing variable. So what happens?</p>
+<pre class="language-csharp"><code class="language-csharp">    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token class-name">TrackedResource</span> rollbackProcess <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span>
+        <span class="token punctuation">{</span>
+            <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">TrackedResource</span> process <span class="token operator">=</span> <span class="token keyword">new</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                rollbackProcess <span class="token operator">=</span> process<span class="token punctuation">;</span>
+                <span class="token comment">// assuming something  failed </span>
+                <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">NotImplementedException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">catch</span>
+        <span class="token punctuation">{</span>
+            rollbackProcess<span class="token punctuation">.</span><span class="token function">Use</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<p>returns</p>
+<pre><code>[1] Created
+[1] Disposed (unmanaged resources freed)
+[1] Used
+</code></pre>
+<p>It still works. Why? What is happening?<br>
+First of all - <code>using(){}</code> is already it's own <code>try{} finally{}</code> block. We can see this in <a href="https://sharplab.io/#v2:D4AQTAjAsAUOAEIIHZYG9by4iA2RALPALICGAlgHYAUAlJthjNi/ACoBOpAxgNYCmAEwBK/AM4B7AK4du/eBwkAbJQCMevAAqK5YsfAC88SlJUBuBq3gAXDgE9LrJlasgADPGqcNQ0ZJly8AAOOuL6RpT8AO7UELT0zC4szkkuiirqfNoSuuHBoXoWiamsAPSl8I4lWNYAFopRxtHwAHIS1gCSALZBSvxd/JTWQgCiAB5yQdbkEjS0RdXwAL5V2CvFrNyk1ty1q1gpJelqGtm5AHQAqmL8dAsu6yzr67AI3ny+4tKy8gBc8B0ACLkMRBCRiUiqProRwgADMCn4pEEsyUdngVGsAME9yw5RC5AAbtt5KoJMp4AB9QQgsE3QSGeAAM1IShuRVhCPeAhEXwCt0xGMECWS+2xjPIOLFSAAnNQACQAIgA2mgOoIlgBdeAAYQ4SOGgkV80cLw28MI8GutxFjEc5RY5CZnmptPBQlteIqLjqDSajQA8qoAFb8bjWYGg92CcaTaazBWK7mffw/VXqrXG3GsWWJ9Ma7XWo0mjZmlgWkBESN0m2OQ7wB3YV1R+mM2xSfjZ8sQOVK/Na+DV6OeKSULqkSikADmQkRqd0zP1HqzYoA4jrzgBlKRBEJhABiVFZ5AAXrc6iD5g2KsMVPp1/9KBImrPrM+tipmUelKf+BxTbAsBmrAQA===">Sharplab</a>, the <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/using">docs</a> and the <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/statements#1314-the-using-statement">language specification</a>  </p>
+<p>But this still does not explain why <code>process</code> is still accessible via <code>rollbackProcess</code>. The answers lies in the Garbage Collector.</p>
+<h2 id="using-statement-1">using statement<a aria-hidden="true" class="anchor-heading icon-link" href="#using-statement-1"></a></h2>
+<p>recently I stumbled upon a code snippet like this</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">var</span> rollbackProcess
+<span class="token keyword">try</span> <span class="token punctuation">{</span>
+    <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">SPWeb</span> process <span class="token operator">=</span> someSite<span class="token punctuation">.</span><span class="token function">Openweb</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// prepare Rollback</span>
+        rollbackProcess <span class="token operator">=</span> process
+        
+        <span class="token comment">//... some code here</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">{</span>
+    <span class="token comment">// rollback</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p><code>The using declaration calls the Dispose method on the object in the correct way when it goes out of scope. The using statement causes the object itself to go out of scope as soon as Dispose is called.</code></p>
+<p>If you dispose an object manually you should(must?) remove the reference with assigning a new value to "unchain" it and make it free for the GC to collect.
+Mostly this looks like this</p>
+<pre class="language-csharp"><code class="language-csharp">process<span class="token punctuation">.</span><span class="token function">dispose</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+process <span class="token operator">=</span> <span class="token keyword">null</span>
+</code></pre>
+<p>but <code>using</code> is only aware of <code>process</code>, which means the object is still referenced in <code>rollbackProcess</code> and therefore, will never be disposed.</p>
+<h3 id="solution">Solution<a aria-hidden="true" class="anchor-heading icon-link" href="#solution"></a></h3>
+<p>How do we solve the problem?<br>
+In this case, the developer just turned <code>rollbackProcess = process</code> into <code>rollbackProcessURL = process.URL</code> which is a <code>string</code> Type and it did the Trick.<br>
+I'm not sure <code>rollbackProcessURL</code> is still a reference to the <code>URL</code> Property of <code>process</code> and I don't know how to check that and if that works in other cases.  </p>
+<p>For better solutions it may help us to understand what's going on.
+Sharplab shows us that <code>using</code>s are nothing more than a <code>try{} finally{}</code> </p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">C</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">M</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">Person</span> Demo <span class="token operator">=</span> <span class="token keyword">new</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>Demo<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>get's lowered to</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">C</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">M</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token class-name">Person</span> person <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Person</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span>
+        <span class="token punctuation">{</span>
+            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>person<span class="token punctuation">.</span>Name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">finally</span>
+        <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>person <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                <span class="token punctuation">(</span><span class="token punctuation">(</span>IDisposable<span class="token punctuation">)</span>person<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Dispose</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>which means we can use the example above to this</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token class-name">SPWeb</span> process <span class="token operator">=</span> <span class="token keyword">null</span>
+<span class="token keyword">try</span> <span class="token punctuation">{</span>   
+    someSite<span class="token punctuation">.</span><span class="token function">Openweb</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment">//... some code here</span>
+<span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">{</span>
+    <span class="token comment">// rollback</span>
+<span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+    <span class="token comment">// this is the new way to do</span>
+    <span class="token comment">// if (process){ process.Dispose }</span>
+    process<span class="token punctuation">?.</span><span class="token function">Dispose</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
