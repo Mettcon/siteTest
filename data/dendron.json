@@ -128,7 +128,7 @@
     "enableTaskNotes": true,
     "enablePrettyLinks": true,
     "searchMode": "search",
-    "siteUrl": "localhost:3000",
+    "siteUrl": "https://github.mettcon.io/sitetest",
     "siteFaviconPath": "favicon.ico",
     "siteIndex": "root"
   }
